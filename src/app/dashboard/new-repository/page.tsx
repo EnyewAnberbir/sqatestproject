@@ -40,8 +40,10 @@ export default function NewRepositoryPage() {
         return
       }
 
+      // First refresh to ensure data is updated
+      await router.refresh()
+      // Then navigate to dashboard
       router.push('/dashboard')
-      router.refresh()
     } catch (error) {
       setError('An error occurred. Please try again.')
     } finally {

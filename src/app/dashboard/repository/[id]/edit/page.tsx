@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { use } from 'react'
 
 interface Repository {
   id: string
@@ -18,12 +17,11 @@ export default function EditRepositoryPage({ params }: { params: { id: string } 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [repository, setRepository] = useState<Repository | null>(null)
-  const id = use(Promise.resolve(params.id))
 
   useEffect(() => {
     const fetchRepository = async () => {
       try {
-        const response = await fetch(`/api/repositories/${id}`, {
+        const response = await fetch(`/api/repositories/${params.id}`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -39,8 +37,10 @@ export default function EditRepositoryPage({ params }: { params: { id: string } 
       }
     }
 
-    fetchRepository()
-  }, [id])
+    if (params.id) {
+      fetchRepository()
+    }
+  }, [params.id])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -54,7 +54,7 @@ export default function EditRepositoryPage({ params }: { params: { id: string } 
     const status = formData.get('status') as 'active' | 'inactive'
 
     try {
-      const response = await fetch(`/api/repositories/${id}`, {
+      const response = await fetch(`/api/repositories/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -73,6 +73,7 @@ export default function EditRepositoryPage({ params }: { params: { id: string } 
         throw new Error(data.message || 'Failed to update repository')
       }
 
+      // Navigate to dashboard and refresh the page
       router.push('/dashboard')
       router.refresh()
     } catch (error) {
