@@ -2,21 +2,25 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Menu } from '@headlessui/react'
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
 
 interface Repository {
   id: string
   name: string
   description: string
-  lastUpdated: string
   status: 'active' | 'inactive'
 }
 
 export default function DashboardPage() {
-  const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortBy, setSortBy] = useState<'name' | 'lastUpdated'>('lastUpdated')
+  const [sortBy, setSortBy] = useState<'name'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { data: repositories, isLoading } = useQuery<Repository[]>({
     queryKey: ['repositories', currentPage, sortBy, sortOrder, searchQuery],
@@ -28,19 +32,51 @@ export default function DashboardPage() {
         throw new Error('Failed to fetch repositories')
       }
       const data = await response.json()
-      console.log('Raw API Response:', data) // Debug log
-      console.log('Processed repositories:', data.results) // Debug log
-      // Return the results array from the paginated response
       return data.results || []
     },
   })
 
-  const handleSort = (field: 'name' | 'lastUpdated') => {
+  const handleSort = (field: 'name') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortBy(field)
       setSortOrder('asc')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this repository?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/repositories/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to delete repository')
+      }
+
+      // Invalidate and refetch
+      await queryClient.invalidateQueries({ queryKey: ['repositories'] })
+      // Update router
+      router.refresh()
+      
+      // Remove the repository from the current data immediately
+      if (repositories) {
+        queryClient.setQueryData(['repositories', currentPage, sortBy, sortOrder, searchQuery], 
+          repositories.filter(repo => repo.id !== id)
+        )
+      }
+    } catch (error) {
+      console.error('Error deleting repository:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete repository')
     }
   }
 
@@ -96,16 +132,6 @@ export default function DashboardPage() {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('lastUpdated')}
-                  >
-                    Last Updated
-                    {sortBy === 'lastUpdated' && (
-                      <span className="ml-2">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </th>
-                  <th
-                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
                   >
                     Status
@@ -118,13 +144,13 @@ export default function DashboardPage() {
               <tbody className="bg-gray-800 divide-y divide-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-300">
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-300">
                       Loading...
                     </td>
                   </tr>
                 ) : !repositories || repositories.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-300">
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-300">
                       No repositories found
                     </td>
                   </tr>
@@ -140,12 +166,9 @@ export default function DashboardPage() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 text-gray-300">{repo.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {new Date(repo.lastUpdated).toLocaleDateString()}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             repo.status === 'active'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
@@ -155,12 +178,39 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
-                          href={`/dashboard/repository/${repo.id}/settings`}
-                          className="text-blue-500 hover:text-blue-400"
-                        >
-                          Settings
-                        </Link>
+                        <Menu as="div" className="relative inline-block text-left">
+                          <Menu.Button className="p-2 text-gray-400 hover:text-gray-300 rounded-full hover:bg-gray-700">
+                            <EllipsisVerticalIcon className="h-5 w-5" />
+                          </Menu.Button>
+                          <Menu.Items className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                            <div className="py-1">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <Link
+                                    href={`/dashboard/repository/${repo.id}/edit`}
+                                    className={`${
+                                      active ? 'bg-gray-700' : ''
+                                    } block px-4 py-2 text-sm text-gray-300`}
+                                  >
+                                    Edit
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => handleDelete(repo.id)}
+                                    className={`${
+                                      active ? 'bg-gray-700' : ''
+                                    } block w-full text-left px-4 py-2 text-sm text-red-400`}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </Menu.Item>
+                            </div>
+                          </Menu.Items>
+                        </Menu>
                       </td>
                     </tr>
                   ))
@@ -169,7 +219,6 @@ export default function DashboardPage() {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="mt-4 flex justify-center">
             <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
               <button
