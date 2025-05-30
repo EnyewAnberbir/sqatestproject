@@ -27,7 +27,10 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error('Failed to fetch repositories')
       }
-      return response.json()
+      const data = await response.json()
+      console.log('API Response:', data) // Debug log
+      // Ensure we return an array
+      return Array.isArray(data) ? data : []
     },
   })
 
@@ -118,14 +121,14 @@ export default function DashboardPage() {
                       Loading...
                     </td>
                   </tr>
-                ) : repositories?.length === 0 ? (
+                ) : !repositories || repositories.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-4 text-center text-gray-300">
                       No repositories found
                     </td>
                   </tr>
                 ) : (
-                  repositories?.map((repo) => (
+                  repositories.map((repo) => (
                     <tr key={repo.id} className="hover:bg-gray-750">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link
