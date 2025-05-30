@@ -4,24 +4,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
       <div className="container mx-auto px-4 py-16">
-        <nav className="flex justify-between items-center mb-16">
-          <h1 className="text-2xl font-bold text-white">AI Code Review</h1>
-          <div className="space-x-4">
-            <Link 
-              href="/login" 
-              className="text-white hover:text-gray-300 transition-colors"
-            >
-              Login
-            </Link>
-            <Link 
-              href="/register" 
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Register
-            </Link>
-          </div>
-        </nav>
-
         <main className="text-center">
           <h2 className="text-5xl font-bold text-white mb-6">
             Automated Code Review with AI
@@ -39,11 +21,11 @@ export default function Home() {
             <Link
               href="/about"
               className="border border-gray-400 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors"
-          >
+            >
               Learn More
             </Link>
-        </div>
-      </main>
+          </div>
+        </main>
 
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
           <FeatureCard

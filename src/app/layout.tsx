@@ -1,12 +1,13 @@
-import { Inter } from 'next/font/google'
 import './globals.css'
+import { Inter } from 'next/font/google'
 import { Providers } from './providers'
+import Navbar from '@/components/Navbar'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Automated AI Code Review',
-  description: 'A powerful tool for automated code review using AI',
+  title: 'AI Code Review',
+  description: 'Automated code review with AI',
 }
 
 export default function RootLayout({
@@ -18,7 +19,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-        {children}
+          <Navbar />
+          {children}
         </Providers>
       </body>
     </html>
