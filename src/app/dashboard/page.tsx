@@ -28,9 +28,10 @@ export default function DashboardPage() {
         throw new Error('Failed to fetch repositories')
       }
       const data = await response.json()
-      console.log('API Response:', data) // Debug log
-      // Ensure we return an array
-      return Array.isArray(data) ? data : []
+      console.log('Raw API Response:', data) // Debug log
+      console.log('Processed repositories:', data.results) // Debug log
+      // Return the results array from the paginated response
+      return data.results || []
     },
   })
 
